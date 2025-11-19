@@ -57,7 +57,7 @@ public void addRecord(String sql, Object... values) {
 }
 
 // Dynamic view method to display records from any table
-    public void viewRecords(String sqlQuery, String[] columnHeaders, String[] columnNames) {
+public void viewRecords(String sqlQuery, String[] columnHeaders, String[] columnNames) {
         // Check that columnHeaders and columnNames arrays are the same length
         if (columnHeaders.length != columnNames.length) {
             System.out.println("Error: Mismatch between column headers and column names.");
@@ -94,11 +94,8 @@ public void addRecord(String sql, Object... values) {
         }
     }
     
-    //-----------------------------------------------
-    // UPDATE METHOD
-    //-----------------------------------------------
-    
-    public void updateRecord(String sql, Object... values) {
+// Update or Edit
+public void updateRecord(String sql, Object... values) {
         try (Connection conn = this.connectDB(); // Use the connectDB method
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -132,7 +129,7 @@ public void addRecord(String sql, Object... values) {
         }
     }
     
-    // Add this method in the config class
+// Add this method in the config class
 public void deleteRecord(String sql, Object... values) {
     try (Connection conn = this.connectDB();
          PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -153,7 +150,7 @@ public void deleteRecord(String sql, Object... values) {
     }
 }
     
-    // Fetch Records
+// Fetch Records
 public java.util.List<java.util.Map<String, Object>> fetchRecords(String sqlQuery, Object... values) {
     // 1. Fixed List capitalization and 2. Fixed ArrayList instantiation
     java.util.List<java.util.Map<String, Object>> records = new java.util.ArrayList<>();
@@ -184,4 +181,61 @@ public java.util.List<java.util.Map<String, Object>> fetchRecords(String sqlQuer
     }
     return records;
 }
+
+// Same as Fetch
+public int getVaccineStock(int vId) {
+    String sql = "SELECT v_stock FROM tbl_vaccine WHERE v_id = ?";
+    
+    try (java.sql.Connection conn = connectDB();
+         java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        
+        pstmt.setInt(1, vId);
+        
+        try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                // Return the stock value found
+                return rs.getInt("v_stock");
+            } else {
+                // Vaccine ID not found (treat as zero stock for safety)
+                System.out.println("⚠️ Warning: Vaccine ID " + vId + " not found.");
+                return 0; 
+            }
+        }
+    } catch (java.sql.SQLException e) {
+        System.out.println("❌ Database Error fetching stock: " + e.getMessage());
+        return -1; // Indicate a serious error
+    }
+}
+
+// Method to hash passwords using SHA-256
+public static String hashPassword(String password) {
+    try {
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] hashedBytes = md.digest(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        
+        // Convert byte array to hex string
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hashedBytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
+    } catch (java.security.NoSuchAlgorithmException e) {
+        System.out.println("Error hashing password: " + e.getMessage());
+        return null;
+    }
+}
+
+public boolean emailExists(String email) {
+    // We only need the ID, but SELECT * is fine too if you prefer
+    String sql = "SELECT id FROM tbl_users WHERE email = ?"; 
+    
+    // Use the existing fetchRecords method
+    java.util.List<java.util.Map<String, Object>> result = fetchRecords(sql, email);
+    
+    // Check if the list of maps is empty. If it's not empty, the email exists.
+    return !result.isEmpty();
+}
+
 }

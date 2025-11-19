@@ -17,17 +17,32 @@ public class Register {
         System.out.print("Enter Email: ");
         String email = sc.nextLine();
         
+        // Email Existence Checker
+        if (conf.emailExists(email)) {
+            System.out.println("Registration failed: The email address '" + email + "' is already registered.");
+            return; // Stop the registration process immediately
+        }
+        
         System.out.print("Enter Password: ");
         String password = sc.nextLine();
         
+                    
+        // Hashing Password in Regsitration
+        String hashedPassword = config.hashPassword(password);
+        
+        if (hashedPassword == null) {
+            System.out.println("❌ Registration failed: System error during password hashing.");
+            return; // Abort registration if hashing failed
+        }
+        
         // --- MODIFIED REGISTRATION LOGIC: Default to Staff/Admin, then force Staff ---
-        while(isLooping){       
+        while(isLooping){        
             // SELECTION OF THE TYPE OF USER
             System.out.println("1. Admin (Requires Admin creation or initial setup)");
             System.out.println("2. Staff (Default Registration Type)");
             System.out.print("Select Type: ");
             String answer = sc.nextLine();
-            
+
             
             switch (answer){
                 case "1":
@@ -48,8 +63,8 @@ public class Register {
             isLooping = false;
         }
         // New users are always set to Pending
-        String sql = "INSERT INTO tbl_users (name, email, password, status, type) VALUES (?, ?, ?, ?, ?)";
-        conf.addRecord(sql, name, email, password, "Pending", type);
+        String sql = "INSERT INTO tbl_users (name, email, password, status, type, must_change_pass) VALUES (?, ?, ?, ?, ?, ?)";
+        conf.addRecord(sql, name, email, hashedPassword, "Pending", type, 0);
         System.out.println("Registration complete. Please wait for an Admin to approve your account.");
     }
 }
